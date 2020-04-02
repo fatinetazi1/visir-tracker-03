@@ -12,9 +12,9 @@ public:
 	static void markPoints(Mat& img, const std::vector<Point2f>& vPoints, Scalar color = CV_RGB(255, 165, 0));
 	
 	// draws vectors of the vector Optical Flow Field () into the image
-	static void markVecOFF(Mat& img, const Mat& hFlow, const Mat& vFlow);
+	static void markVecOFF(Mat& img, Mat& recent, Point2f recent_corner, Point2f old_corner, Scalar color);
 	
 	// draws GUI
-	static void markGUI(Mat& img);
+	static void markGUI(Mat& img, std::string fps);
 };
 

@@ -16,7 +16,7 @@ source_group("Source Files\\Face" FILES "src/Face.h" "src/Face.cpp")
 source_group("Source Files\\Marker" FILES "src/Marker.h" "src/Marker.cpp")
 
 # OpenCV package
-find_package(OpenCV 4.0 REQUIRED core highgui imgproc imgcodecs PATHS "$ENV{OPENCVDIR}/build")
+find_package(OpenCV 4.0 REQUIRED core objdetect highgui imgproc video videoio imgcodecs PATHS "$ENV{OPENCVDIR}/build")
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj

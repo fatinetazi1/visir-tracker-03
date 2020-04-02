@@ -15,7 +15,11 @@ void CCameraCantroller::start()
 		Mat img;
 		for (;;) {
 			// ------ MODIFY CODE HERE -------
-			m_mtx_FrameBuffer.lock();			
+			m_mtx_FrameBuffer.lock();
+            if (pointer_in == pointer_out && m_inFrameCounter != 0) {
+                pointer_out++;
+                printf("Drop Frame State\n");
+            }
 			m_camera >> m_vFrameBuffer[pointer_in % m_vFrameBuffer.size()];
 			pointer_in++;
 			m_mtx_FrameBuffer.unlock();
