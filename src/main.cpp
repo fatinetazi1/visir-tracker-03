@@ -109,7 +109,7 @@ int main(int argc, const char** argv) {
 
 // Face
 std::vector<ptr_face_t> detectFaces(Mat frame) {
-    // Modify to your path 
+    // Modify to your path
     std::string path = "/Users/fatine/Documents/HCI/GitHub/visir-tracker-03/build/bin/Debug/face.xml";
     if(!face_cascade.load(path) ) {
         printf("Error loading face cascade");
@@ -162,6 +162,7 @@ std::vector<Point2f> faceFeatureExtraction(Mat frame, std::vector<ptr_face_t> vp
         // Apply corner detection
         goodFeaturesToTrack(roi, facecorners, 200, 0.01, 10, Mat(), 3, false, 0.04);
         
+        // Adjust corners to original image size
         for (int i = 0; i < facecorners.size(); i++) {
             facecorners[i].x += face->getArea().x;
             facecorners[i].y += face->getArea().y;
