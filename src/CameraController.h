@@ -7,10 +7,11 @@ public:
 	CCameraCantroller(size_t buf_len) : m_vFrameBuffer(buf_len) {}
 	~CCameraCantroller(void) = default;
 
-	void	init(void);
-	void	start(void);
-	Mat		getFrame(void);
-	void	stop(void);
+	void	            init(void);
+	void                start(void);
+    static std::string  getFPS();
+	Mat		            getFrame(void);
+	void	            stop(void);
 
 
 private:

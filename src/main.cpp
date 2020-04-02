@@ -19,29 +19,20 @@ CascadeClassifier face_cascade;
 
 int main(int argc, const char** argv) {
     
-    // Random colors
-    std::vector<Scalar> colors;
-    RNG rng;
-    for(int i = 0; i < 100; i++) {
-        int r = rng.uniform(0, 256);
-        int g = rng.uniform(0, 256);
-        int b = rng.uniform(0, 256);
-        colors.push_back(Scalar(r,g,b));
-    }
-    
     std::string fps = ""; // Frames per second
-	std::vector<Point2f> vPoints;
+    std::vector<Point2f> vmPoints;
+    std::vector<Point2f> vfPoints;
 	std::vector<ptr_face_t> vpFaces;
 	
 	namedWindow("Camera");
 	
-	// mouse callback function which fills vPoints with coordinates of mouse clicks
+	// mouse callback function which fills vmPoints with coordinates of mouse clicks
 	setMouseCallback("Camera", [] (int event, int x, int y, int flags, void* userdata) {
 		if (userdata && event == EVENT_LBUTTONDOWN) {
 			std::vector<Point2f> *pvPoints = (std::vector<Point2f> *) userdata;
 			pvPoints->push_back(Point2f(x, y));
 		}
-	}, (void*) &vPoints);
+	}, (void*) &vmPoints);
 	
 	CCameraCantroller controller(16);
 
@@ -53,8 +44,7 @@ int main(int argc, const char** argv) {
 	float attenuation = 0.5f;
     int frameCount = 0;
     
-    Mat old, old_gray;
-    Mat recent, recent_gray;
+    Mat old_gray, recent_gray;
     std::vector<Point2f> old_corners, good_recent_corners; // Features
     
 	for(;;) {
@@ -66,46 +56,41 @@ int main(int argc, const char** argv) {
 			mask.setTo(0);
 
 			// ------ PUT YOUR CODE HERE -------
-			if (frameCount%10 == 0) vpFaces = detectFaces(img);
-//			  CMarker::markFaces(mask, vpFaces);
-//            add(img, mask, img);
+            vpFaces = detectFaces(img);
+            CMarker::markFaces(mask, vpFaces);
+            add(img, mask, img);
             
-            // ------ PUT YOUR CODE HERE -------
-            vPoints = featureExtraction(img);
-//            CMarker::markPoints(mask, vPoints, Scalar(255, 0, 0));
-//            add(img, mask, img);
+            if (frameCount == 1 || frameCount%10 == 0) {
+                if(!old_corners.empty()) old_corners.clear();
+                
+                vfPoints = faceFeatureExtraction(img, vpFaces);
+                old_corners = vfPoints;
+                old_corners.insert(old_corners.end(), vmPoints.begin(), vmPoints.end());
+                //CMarker::markPoints(mask, old_corners, Scalar(255, 0, 0));
+                //add(img, mask, img);
+                
+                cvtColor(img, old_gray, COLOR_BGR2GRAY);
+            } else {
+                if (frameCount%2 == 0) {
+                    cvtColor(img, recent_gray, COLOR_BGR2GRAY);
 
-            if (old_gray.empty() || old_corners.empty()) {
-                //First frame
-                old = img.clone();
-                cvtColor(old, old_gray, COLOR_BGR2GRAY);
-
-                // Find corners of first frame
-                old_corners = featureExtraction(img);
-                continue;
-            }
-
-            if (frameCount%2 == 0) {
-                recent = img.clone();
-                cvtColor(recent, recent_gray, COLOR_BGR2GRAY);
-
-                good_recent_corners = calcOpticalFlow(old_gray, recent_gray, old_corners);
-                // Optical Flow Visualization
-                for(int i = 0; i < good_recent_corners.size(); i++) {
-                    CMarker::markVecOFF(mask, recent, good_recent_corners[i], old_corners[i], colors[i]);
-                    add(recent, mask, img);
+                    good_recent_corners = calcOpticalFlow(old_gray, recent_gray, old_corners);
+                    // Optical Flow Visualization
+                    for(int i = 0; i < good_recent_corners.size(); i++) {
+                        CMarker::markVecOFF(mask, img, good_recent_corners[i], old_corners[i]);
+                        add(img, mask, img);
+                    }
+                    
+                    
+                    old_gray = recent_gray.clone(); // Update the previous frame
+                    old_corners = good_recent_corners; // Update previous corners
+                    
+                    // Uncomment line below for the OFF of mouse points
+//                    old_corners.insert(old_corners.end(), vmPoints.begin(), vmPoints.end());
                 }
-
-                old_gray = recent_gray.clone(); // Update the previous frame
-                old_corners = good_recent_corners; // Update previous corners
             }
             
-//            if (!vpFaces.empty()){
-//                std::vector<Point2f> vfPoints = faceFeatureExtraction(img, vpFaces);
-//                vPoints.insert(vPoints.end(), vfPoints.begin(), vfPoints.end());
-//                CMarker::markPoints(mask, vPoints, Scalar(255, 0, 0));
-//            }
-            
+            fps = CCameraCantroller::getFPS();
             CMarker::markGUI(mask, fps);
             
             add(img, attenuation * mask, img);
@@ -124,7 +109,9 @@ int main(int argc, const char** argv) {
 
 // Face
 std::vector<ptr_face_t> detectFaces(Mat frame) {
-    if(!face_cascade.load("/Users/fatine/Documents/HCI/GitHub/visir-tracker-03/build/bin/Debug/face.xml") ) {
+    // Modify to your path 
+    std::string path = "/Users/fatine/Documents/HCI/GitHub/visir-tracker-03/build/bin/Debug/face.xml";
+    if(!face_cascade.load(path) ) {
         printf("Error loading face cascade");
         exit(1);
     };
@@ -167,12 +154,18 @@ std::vector<Point2f> faceFeatureExtraction(Mat frame, std::vector<ptr_face_t> vp
     cvtColor(frame, frame_gray, COLOR_BGR2GRAY); // Convert to grayscale
     
     for (auto face : vpFaces) {
-        Mat roi = frame_gray(face->getArea());
+        Mat roi(frame_gray(face->getArea()));
         std::vector<Point2f> facecorners;
         
         // Apply corner detection
-        goodFeaturesToTrack(roi, facecorners, 200, 0.01, 10,
-                            Mat(), 3, false, 0.04);
+//        goodFeaturesToTrack(frame_gray, facecorners, 200, 0.01, 10, roi, 3, false, 0.04);
+        // Apply corner detection
+        goodFeaturesToTrack(roi, facecorners, 200, 0.01, 10, Mat(), 3, false, 0.04);
+        
+        for (int i = 0; i < facecorners.size(); i++) {
+            facecorners[i].x += face->getArea().x;
+            facecorners[i].y += face->getArea().y;
+        }
         
         corners.insert(corners.end(), facecorners.begin(), facecorners.end());
     }

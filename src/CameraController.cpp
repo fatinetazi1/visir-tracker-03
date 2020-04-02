@@ -1,4 +1,7 @@
 #include "CameraController.h"
+#include <stdio.h>
+
+char buffer [25];
 
 void CCameraCantroller::init()
 {
@@ -50,12 +53,18 @@ void CCameraCantroller::start()
 			int64 out_fps = out_fps_new - out_fps_old;
 			out_fps_old = out_fps_new;
 			
-			printf("FPS: in: %.2f | out: %.2f\n", in_fps / sec, out_fps / sec);
+            sprintf (buffer, "FPS: in: %.2f | out: %.2f", in_fps / sec, out_fps / sec);
+			printf("%s\n", buffer);
 
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 			if (m_terminate_counter) break;
 		}
 	});
+}
+
+std::string CCameraCantroller::getFPS() {
+    std::string fps(buffer);
+    return fps;
 }
 
 Mat CCameraCantroller::getFrame()
